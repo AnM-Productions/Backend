@@ -1,0 +1,36 @@
+const azure = require('azure-storage');
+
+const tableService = azure.createTableService('sudatabase', 'key');
+const tableName = "Characters";
+// Gets character name of ID.
+// If no ID is passed in, it will get all characters for user name (partition key of characters)
+// Partition key (username) is required, id is not.
+module.exports = function (context, req) {
+    context.log('Start ItemRead');
+    const partition = req.query.user;
+    // If ID is blank, we will return all characters with user name
+    const id = req.query.id;
+    if (id) {
+        // return item with RowKey 'id'
+        tableService.retrieveEntity(tableName, partition, id, function (error, result, response) {
+            if (!error) {
+                context.res.status(200).json(response.body);
+            }
+            else {
+                context.res.status(500).json({error : error});
+            }
+        });
+    }
+    else {
+        // returns character name when just called with a partition key (username)
+        var query = new azure.TableQuery().where('PartitionKey == ?', partition);
+        query = query.select('charName')
+        tableService.queryEntities(tableName, query, null, function (error, result, response) {
+            if(!error){
+                context.res.status(200).json(response.body);
+            } else {
+                context.res.status(500).json({error : error});
+            }
+        });
+    }
+};

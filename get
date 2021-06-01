@@ -1,0 +1,29 @@
+const azure = require('azure-storage');
+
+const tableService = azure.createTableService('sudatabase', 'key');
+const tableName = "Accounts";
+
+module.exports = function (context, req) {
+
+    const id = req.query.id;
+    const details = req.query.details
+    if (id && details) {
+        // return item with RowKey 'id'
+        tableService.retrieveEntity(tableName, 'User', id, function (error, result, response) {
+            if (!error) {
+                if(details === response.body.password){
+                    context.res.status(200).json({response: "true"});
+                }
+                else {
+                    context.res.status(500).json({error: "false"})
+                }
+            }
+            else {
+                context.res.status(500).json({error : "does not exist"});
+            }
+        });
+    }
+    else {
+        context.res.status(500).json({error: "incorrect format"})
+    }
+};

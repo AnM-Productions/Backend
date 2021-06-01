@@ -1,0 +1,36 @@
+const azure = require('azure-storage');
+
+const uuid = require('uuid/v1');
+
+
+const tableService = azure.createTableService('sudatabase', 'key');
+
+const tableName = "Characters";
+
+module.exports = function (context, req) {
+    context.log('Start ItemCreate');
+
+    if (req.body) {
+
+        //TODO add validation of req.body
+
+        const item = req.body;
+        item["PartitionKey"] = req.body.name;
+        item["RowKey"] = req.body.charName;
+
+        tableService.insertOrMergeEntity(tableName, item, { echoContent: true }, function (error, result, response) {
+            if (!error) {
+                context.res.status(201).json(response);
+            } else {
+                context.res.status(500).json({ error: error });
+            }
+        });
+    }
+    else {
+        context.res = {
+            status: 400,
+            body: "Please pass an item in the request body"
+        };
+        context.done();
+    }
+};
